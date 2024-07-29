@@ -1,0 +1,54 @@
+# Define the webhook URL variable
+options:
+    webhookURL: "WEBHOOK URL"
+
+# Define variables for tracking player positions and times
+variables:
+    {lastY.%player%} = 0
+    {flyTime.%player%} = 0
+
+# Check for flying every 1 second
+every 1 second:
+    loop all players:
+        if loop-player's gamemode is not creative:
+            set {_currentY} to loop-player's y-coordinate
+            if loop-player is not on ground:
+                if {_currentY} < {lastY.%loop-player%}:
+                    # Player is falling
+                    set {flyTime.%loop-player%} to 0
+                else:
+                    # Player is flying or ascending
+                    add 1 to {flyTime.%loop-player%}
+                    if {flyTime.%loop-player%} > 5:
+                        broadcast "&c%loop-player% is flying without permission!"
+                        # Send message to Discord webhook
+                        send "Player %loop-player% is flying without permission!" as webhook to {@webhookURL}
+                        # Ensure kicking is executed
+                        kick loop-player due to "[Syn anticheat] Flying without permission."
+                set {lastY.%loop-player%} to {_currentY}
+            else:
+                # Player is on the ground
+                set {flyTime.%loop-player%} to 0
+                set {lastY.%loop-player%} to loop-player's y-coordinate
+
+# Check for extended reach on damage
+on damage:
+    if attacker is a player:
+        set {_reach} to distance between attacker and victim
+        if {_reach} > 4:
+            broadcast "&c%attacker% is cheating with reach of %{_reach}% blocks!"
+            # Send message to Discord webhook
+            send "%attacker% is cheating with reach of %{_reach}% blocks!" as webhook to {@webhookURL}
+            # Ensure kicking is executed
+            kick attacker due to "[Syn anticheat] Cheating with extended reach."
+
+# Check for extended reach on block break
+on block break:
+    if player is a player:
+        set {_reach} to distance between player and target block
+        if {_reach} > 4:
+            broadcast "&c%player% is cheating with reach of %{_reach}% blocks!"
+            # Send message to Discord webhook
+            send "%player% is cheating with reach of %{_reach}% blocks!" as webhook to {@webhookURL}
+            # Ensure kicking is executed
+            kick player due to "[Syn anitcheat] Cheating with extended reach."
